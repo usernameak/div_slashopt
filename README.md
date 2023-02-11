@@ -5,12 +5,13 @@ Improves game performance on modern Windows.
 
 Requires [ThirteenAG's Ultimate ASI Loader](https://github.com/ThirteenAG/Ultimate-ASI-Loader/releases) to load the mod (name the loader's dll as `winmm.dll`, otherwise it will not work).
 
-Installation
-------------
-
-Supported game versions:
+Supported game versions
+-----------------------
 * 1.0.0.62
 * 1.0.0.61 (Russian)
+
+Installation
+------------
 
 1. Download the package from [Releases](https://github.com/usernameak/div_slashopt/releases) (the package already contains the loader, so you don't have to download it separately).
 2. Unpack it to the game root folder.
