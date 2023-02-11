@@ -1,0 +1,13 @@
+void *DllSlashedGetInfo(int type):
+    type = 0: CSpriteContainer *
+    type = 1: CTextureCacheWrapper *
+    type = 2: is initialized?
+    type = 3: CVideoMem *
+    type = 4: some property of texture cache wrapper?
+    type = 5: void ** - store what is to be saved in cfg here
+    type = 6: something to be deallocated?
+    type = 7: game window HWND
+the following counters don't appear in sw renderers:
+    type = 8: some counter?
+    type = 9: another counter?
+    type = 10: yet ANOTHER counter?!

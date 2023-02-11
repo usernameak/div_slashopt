@@ -21,5 +21,5 @@ add_library(mhook STATIC
 target_include_directories(mhook PUBLIC mhook/mhook-lib)
 
 add_library(slashopt SHARED DllMain.cpp DllMain.cpp)
-target_link_libraries(slashopt mhook)
+target_link_libraries(slashopt mhook version)
 set_target_properties(slashopt PROPERTIES SUFFIX ".asi")

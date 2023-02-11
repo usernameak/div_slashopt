@@ -8,7 +8,9 @@ Requires [ThirteenAG's Ultimate ASI Loader](https://github.com/ThirteenAG/Ultima
 Installation
 ------------
 
-WARNING: It was tested only with the Steam version and might not work with others!
+Supported game versions:
+* 1.0.0.62
+* 1.0.0.61 (Russian)
 
 1. Download the package from [Releases](https://github.com/usernameak/div_slashopt/releases) (the package already contains the loader, so you don't have to download it separately).
 2. Unpack it to the game root folder.

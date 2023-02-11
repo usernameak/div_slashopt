@@ -9,7 +9,7 @@ bool g_isFullscreen = false;
 
 // === BINK VIDEO HOOKS === //
 
-HMODULE g_binkMod               = nullptr;
+HMODULE g_binkMod = nullptr;
 
 typedef int32_t(__stdcall *BINKCOPYTOBUFFER)(void *bnk, void *dest, int32_t destpitch, uint32_t destheight, uint32_t destx, uint32_t desty, uint32_t flags);
 BINKCOPYTOBUFFER BinkCopyToBuffer = nullptr;
@@ -71,7 +71,7 @@ HMODULE WINAPI HookedLoadLibraryA(LPCSTR libName) {
 
     // if we are loading slash1.dll (D3D6 renderer library) for the first time
     if (!g_slash1Mod && hmod && strcmp(libName, "slash1.dll") == 0) {
-        g_slash1Mod = OrigLoadLibraryA(libName); // force it to never unload, increasing refcount
+        g_slash1Mod      = OrigLoadLibraryA(libName); // force it to never unload, increasing refcount
         g_slash1ModBytes = (unsigned char *)hmod;
 
         // hook Slashed rendering engine initialization
@@ -94,15 +94,16 @@ HMODULE WINAPI HookedLoadLibraryA(LPCSTR libName) {
         g_slash1ModBytes[0x1B56] = 0xEB;
 
         // hook Bink
-        g_binkMod   = OrigLoadLibraryA("binkw32.dll");
+        g_binkMod        = OrigLoadLibraryA("binkw32.dll");
         BinkCopyToBuffer = (BINKCOPYTOBUFFER)GetProcAddress(g_binkMod, "_BinkCopyToBuffer@28");
         Mhook_SetHook((void **)&BinkCopyToBuffer, (void *)&Hooked_BinkCopyToBuffer);
     }
     return hmod;
 }
 
-BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
-    if (fdwReason == DLL_PROCESS_ATTACH) {
+void initialize(DWORD major, DWORD minor, DWORD patch, DWORD build) {
+    if (major == 1 && minor == 0 && patch == 0 && build == 62) {
+        // 1.0.0.62
         Mhook_SetHook((void **)&OrigLoadLibraryA,
             (void *)&HookedLoadLibraryA);
 
@@ -111,6 +112,60 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
 
         // default `resolution switch` in config.lcl to 0 rather than 1
         *((unsigned char *)0x48D9AF) = 0x9E;
+    } else if (major == 1 && minor == 0 && patch == 0 && build == 61) {
+        // 1.0.0.61
+        Mhook_SetHook((void **)&OrigLoadLibraryA,
+            (void *)&HookedLoadLibraryA);
+
+        DWORD oldProtect;
+        VirtualProtect((void *)(uintptr_t)0x487000, 0x1000, PAGE_EXECUTE_READWRITE, &oldProtect);
+
+        // default `resolution switch` in config.lcl to 0 rather than 1
+        *((unsigned char *)0x487D34) = 0x9E;
+    } else if (major == 1 && minor == 2 && patch == 0 && build == 0) {
+        // ConfigTool, ignore it
+    } else {
+        MessageBoxW(NULL, L"Borderless Mod: Unsupported Divine Divinity version", L"div_slashopt", MB_OK);
+    }
+}
+
+BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
+    if (fdwReason == DLL_PROCESS_ATTACH) {
+        // get version number
+        HMODULE exeMod = GetModuleHandleW(nullptr);
+        WCHAR szVersionFile[MAX_PATH];
+        GetModuleFileNameW(exeMod, szVersionFile, MAX_PATH);
+
+        DWORD verHandle = 0;
+        UINT size       = 0;
+        LPBYTE lpBuffer = NULL;
+        DWORD verSize   = GetFileVersionInfoSize(szVersionFile, &verHandle);
+
+        if (verSize != NULL) {
+            auto verData = new char[verSize];
+
+            if (GetFileVersionInfoW(szVersionFile, verHandle, verSize, verData)) {
+                if (VerQueryValueW(verData, L"\\", (VOID FAR * FAR *)&lpBuffer, &size)) {
+                    if (size) {
+                        auto *verInfo = (VS_FIXEDFILEINFO *)lpBuffer;
+                        if (verInfo->dwSignature == 0xfeef04bd) {
+                            DWORD major = (verInfo->dwFileVersionMS >> 16) & 0xffff;
+                            DWORD minor = (verInfo->dwFileVersionMS >> 0) & 0xffff;
+                            DWORD patch = (verInfo->dwFileVersionLS >> 16) & 0xffff;
+                            DWORD build = (verInfo->dwFileVersionLS >> 0) & 0xffff;
+
+                            initialize(major, minor, patch, build);
+
+                            delete[] verData;
+                            return TRUE;
+                        }
+                    }
+                }
+            }
+            delete[] verData;
+
+            initialize(0, 0, 0, 0);
+        }
     }
 
     return TRUE;
